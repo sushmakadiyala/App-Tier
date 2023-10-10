@@ -10,16 +10,21 @@ INPUT_S3_BUCKET='cse546-cw-inputbucket'
 OUTPUT_S3_BUCKET = 'cse546-cw-outputbucket'
 INPUT_FOLDER = '/home/ubuntu/input_images'
 RESULTS_FOLDER = '/home/ubuntu/classifier_results'
+AWS_ACCESS_KEY = 'AKIARBKSOI6C6Q2AMVY5'
+AWS_SECRET_KEY = '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'
 
 def sqs_client():
-    sqs = boto3.client('sqs', region_name=REGION_NAME)
+    sqs = boto3.client('sqs', region_name=REGION_NAME, aws_access_key_id=AWS_ACCESS_KEY,
+                  aws_secret_access_key=AWS_SECRET_KEY)
     return sqs
 def s3_client():
-    s3 = boto3.client('s3', region_name=REGION_NAME)
+    s3 = boto3.client('s3', region_name=REGION_NAME, aws_access_key_id=AWS_ACCESS_KEY,
+                  aws_secret_access_key=AWS_SECRET_KEY)
     return s3
 
 def ec2_client():
-    ec2 = boto3.client('ec2', region_name=REGION_NAME)
+    ec2 = boto3.client('ec2', region_name=REGION_NAME, aws_access_key_id=AWS_ACCESS_KEY,
+                  aws_secret_access_key=AWS_SECRET_KEY)
     return ec2
 
 
@@ -49,7 +54,8 @@ def send_result_to_response_queue(result_key, classified_result):
     )
 # This function uploads the result to the output S3 bucket
 def upload_result_to_output_bucket(result_key, classified_result):
-    s3 = boto3.client('s3', region_name=REGION_NAME)
+    s3 = boto3.client('s3', region_name=REGION_NAME, aws_access_key_id=AWS_ACCESS_KEY,
+                  aws_secret_access_key=AWS_SECRET_KEY)
     result_pair = f'({result_key}, {classified_result})'
     s3.put_object(Key=result_key, Bucket=OUTPUT_S3_BUCKET, Body=result_pair)
 
@@ -70,6 +76,9 @@ def stop_current_instance():
     # Stop the EC2 instance
     response = ec2.stop_instances(InstanceIds=[instance_id])
 
+    # Wait for the instance to reach the "stopped" state
+    ec2.get_waiter('instance_stopped').wait(InstanceIds=[instance_id])
+
 def check_for_empty_queue():
     length1 = request_queue_length()
     if length1 == 0:
@@ -78,16 +87,45 @@ def check_for_empty_queue():
         if length1 == 0:
             stop_current_instance()
 
+def get_running_instances():
+    ec2 = ec2_client()
+
+    # Get a list of all EC2 instances in the region
+    response = ec2.describe_instances()
+
+    # Initialize an empty list to store instance IDs in stopped state
+    running_instance_ids = []
+
+    # Iterate through the instances and check their state
+    for reservation in response['Reservations']:
+        for instance in reservation['Instances']:
+            instance_id = instance['InstanceId']
+            state = instance['State']['Name']
+            
+            # Check if the instance is in running state
+            if state == 'running':
+                running_instance_ids.append(instance_id)
+
+    
+    # Print the list of instance IDs in stopped state
+    print("EC2 instances in running state:")
+    for instance_id in running_instance_ids:
+        print(instance_id)
+
+    return len(running_instance_ids)
+
 while True:
-    # receive a message from request queue
-    check_for_empty_queue()
+    count = get_running_instances()
+    if count > 2:
+        check_for_empty_queue()
     # receive a message from request queue        
     sqs = sqs_client()
     received_message = sqs.receive_message(QueueUrl=REQUEST_SQS, MaxNumberOfMessages=1)
     images = received_message.get('Messages', [])
 
     for image in images:
-        image_name = image['Body']
+        unique_name = image["Body"]
+        client_ip, image_name = unique_name.split(' ')
         receipt_handle = image['ReceiptHandle']  # Needed for message deletion
 
         #download corresponding image from input S3 bucket
@@ -100,8 +138,9 @@ while True:
         result_key = image_name.split('.')[0]
         upload_result_to_output_bucket(result_key, classified_result)
 
+        unique_result_key = f"{client_ip} {result_key}"
         #send result to response queue 
-        send_result_to_response_queue(result_key, classified_result)
+        send_result_to_response_queue(unique_result_key, classified_result)
 
         #delete image from local folder
         os.remove(downloaded_image_path)
@@ -110,4 +149,4 @@ while True:
         sqs.delete_message(QueueUrl=REQUEST_SQS, ReceiptHandle=receipt_handle)
 
     # Wait for 5 seconds before polling next message 
-    time.sleep(8) 
+    time.sleep(8)
