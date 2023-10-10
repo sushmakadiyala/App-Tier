@@ -74,7 +74,7 @@ def stop_current_instance():
     ec2 = ec2_client()
 
     # Stop the EC2 instance
-    response = ec2.stop_instances(InstanceIds=[instance_id])
+    response = ec2.terminate_instances(InstanceIds=[instance_id])
 
     # Wait for the instance to reach the "stopped" state
     ec2.get_waiter('instance_stopped').wait(InstanceIds=[instance_id])
