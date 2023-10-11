@@ -79,7 +79,7 @@ def classify_image(downloaded_image_path):
     '/home/ubuntu/app-tier/image_classification.py',
     downloaded_image_path
     ]
-    result = subprocess.run(command,cwd='/home/ubuntu/app-tier', stdout=subprocess.PIPE, text=True)
+    result = subprocess.run(command,cwd='/home/ubuntu/app-tier', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
     #logger.debug(f'Output after running image classification script: {stdout.read()}')
     logger.info(f'stdout after running image classification script: {result.stdout}')
