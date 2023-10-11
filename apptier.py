@@ -53,27 +53,6 @@ def download_image_from_bucket(image_name):
 # This function classifies the given image
 def classify_image(downloaded_image_path):
     #stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
-
-    command = ["ls", "-l"]
-    # Run the command and capture its output
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-
-    # Print the standard output (ls -l output)
-    logger.info(f'stdout after running ls -l: {result.stdout}')
-
-    command = ["ls", "-l", "/home/ubuntu/app-tier/"]
-    # Run the command and capture its output
-    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-
-    # Print the standard output (ls -l output)
-    logger.info(f'stdout after running ls -l /home/ubuntu/app-tier/: {result.stdout}')
-
-    # Get the username of the current user
-    #username = os.getlogin()
-    #logger.info(f'username of the currently logged in user: {username}')
-    #print("Username:", username)
-
-
     command = [
     'python3',
     '/home/ubuntu/app-tier/image_classification.py',
@@ -81,11 +60,9 @@ def classify_image(downloaded_image_path):
     ]
     result = subprocess.run(command,cwd='/home/ubuntu/app-tier', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    #logger.debug(f'Output after running image classification script: {stdout.read()}')
     logger.info(f'stdout after running image classification script: {result.stdout}')
-    logger.info(f'stderr after running image classification script: {result.stderr}')
+    #logger.info(f'stderr after running image classification script: {result.stderr}')
     classified_result  = result.stdout.strip()
-    #classified_result  = stdout.read().strip()
     return classified_result 
 
 # This function sends the result to response queue
@@ -160,9 +137,9 @@ def get_running_instances():
     return len(running_instance_ids)
 
 while True:
-    #count = get_running_instances()
-    #if count > 2:
-    #    check_for_empty_queue()
+    count = get_running_instances()
+    if count > 2:
+        check_for_empty_queue()
     
     # receive a message from request queue        
     sqs = sqs_client()
