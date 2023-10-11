@@ -3,6 +3,7 @@ import time
 import os
 import requests
 import logging
+import subprocess
 
 REGION_NAME = 'us-east-1'
 REQUEST_SQS='https://sqs.us-east-1.amazonaws.com/071576733573/cse546-cw-request-queue'
@@ -51,10 +52,19 @@ def download_image_from_bucket(image_name):
 
 # This function classifies the given image
 def classify_image(downloaded_image_path):
-    stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
-    logger.debug(f'Output after running image classification script: {stdout.read()}')
-    logger.debug(f'Output after running image classification script: {stderr.read()}')
-    classified_result  = stdout.read().strip()
+    #stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
+    command = [
+    'python3',
+    '/home/ubuntu/app-tier/image_classification.py',
+    downloaded_image_path
+    ]
+    result = subprocess.run(command,cwd='/home/ubuntu/app-tier', stdout=subprocess.PIPE, text=True)
+
+    #logger.debug(f'Output after running image classification script: {stdout.read()}')
+    logger.debug(f'stdout after running image classification script: {result.stdout}')
+    logger.debug(f'stderr after running image classification script: {result.stderr}')
+    classified_result  = result.stdout.strip()
+    #classified_result  = stdout.read().strip()
     return classified_result 
 
 # This function sends the result to response queue
