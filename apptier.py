@@ -2,6 +2,7 @@ import boto3
 import time
 import os
 import requests
+import logging
 
 REGION_NAME = 'us-east-1'
 REQUEST_SQS='https://sqs.us-east-1.amazonaws.com/071576733573/cse546-cw-request-queue'
@@ -12,6 +13,17 @@ INPUT_FOLDER = '/home/ubuntu/input_images'
 RESULTS_FOLDER = '/home/ubuntu/classifier_results'
 AWS_ACCESS_KEY = 'AKIARBKSOI6C6Q2AMVY5'
 AWS_SECRET_KEY = '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'
+
+# Configure logging settings
+logging.basicConfig(
+    filename='myapp.log',  # Log file name
+    level=logging.DEBUG,   # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
+# Create a logger instance for your application
+logger = logging.getLogger('myapp')
+
 
 def sqs_client():
     sqs = boto3.client('sqs', region_name=REGION_NAME, aws_access_key_id=AWS_ACCESS_KEY,
@@ -40,6 +52,7 @@ def download_image_from_bucket(image_name):
 # This function classifies the given image
 def classify_image(downloaded_image_path):
     stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
+    logger.debug(f'Output after running image classification script: {stdout.read()}')
     classified_result  = stdout.read().strip()
     return classified_result 
 
@@ -115,9 +128,10 @@ def get_running_instances():
     return len(running_instance_ids)
 
 while True:
-    count = get_running_instances()
-    if count > 2:
-        check_for_empty_queue()
+    #count = get_running_instances()
+    #if count > 2:
+    #    check_for_empty_queue()
+    
     # receive a message from request queue        
     sqs = sqs_client()
     received_message = sqs.receive_message(QueueUrl=REQUEST_SQS, MaxNumberOfMessages=1)
@@ -130,7 +144,7 @@ while True:
 
         #download corresponding image from input S3 bucket
         downloaded_image_path = download_image_from_bucket(image_name)
-
+        logger.debug(f'Image Path: {downloaded_image_path}')
         #do classification using given model
         classified_result = classify_image(downloaded_image_path)
 
