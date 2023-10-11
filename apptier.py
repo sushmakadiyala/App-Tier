@@ -69,8 +69,8 @@ def classify_image(downloaded_image_path):
     logger.info(f'stdout after running ls -l /home/ubuntu/app-tier/: {result.stdout}')
 
     # Get the username of the current user
-    username = os.getlogin()
-    logger.info(f'username of the currently logged in user: {username}')
+    #username = os.getlogin()
+    #logger.info(f'username of the currently logged in user: {username}')
     #print("Username:", username)
 
 
