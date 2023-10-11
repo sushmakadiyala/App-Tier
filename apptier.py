@@ -53,6 +53,7 @@ def download_image_from_bucket(image_name):
 def classify_image(downloaded_image_path):
     stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
     logger.debug(f'Output after running image classification script: {stdout.read()}')
+    logger.debug(f'Output after running image classification script: {stderr.read()}')
     classified_result  = stdout.read().strip()
     return classified_result 
 
