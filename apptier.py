@@ -18,7 +18,7 @@ AWS_SECRET_KEY = 'PF/Ye6Gx3SuC4/e43fUtzZDM86bY/04Reu0VDXMA'
 # Configure logging settings
 logging.basicConfig(
     filename='myapp.log',  # Log file name
-    level=logging.DEBUG,   # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    level=logging.INFO,   # Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
@@ -53,6 +53,27 @@ def download_image_from_bucket(image_name):
 # This function classifies the given image
 def classify_image(downloaded_image_path):
     #stdout = os.popen(f'cd /home/ubuntu/app-tier; python3 /home/ubuntu/app-tier/image_classification.py "{downloaded_image_path}"')
+
+    command = ["ls", "-l"]
+    # Run the command and capture its output
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+    # Print the standard output (ls -l output)
+    logger.info(f'stdout after running ls -l: {result.stdout}')
+
+    command = ["ls", "-l", "/home/ubuntu/app-tier/"]
+    # Run the command and capture its output
+    result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+
+    # Print the standard output (ls -l output)
+    logger.info(f'stdout after running ls -l /home/ubuntu/app-tier/: {result.stdout}')
+
+    # Get the username of the current user
+    username = os.getlogin()
+    logger.info(f'username of the currently logged in user: {username}')
+    #print("Username:", username)
+
+
     command = [
     'python3',
     '/home/ubuntu/app-tier/image_classification.py',
@@ -61,8 +82,8 @@ def classify_image(downloaded_image_path):
     result = subprocess.run(command,cwd='/home/ubuntu/app-tier', stdout=subprocess.PIPE, text=True)
 
     #logger.debug(f'Output after running image classification script: {stdout.read()}')
-    logger.debug(f'stdout after running image classification script: {result.stdout}')
-    logger.debug(f'stderr after running image classification script: {result.stderr}')
+    logger.info(f'stdout after running image classification script: {result.stdout}')
+    logger.info(f'stderr after running image classification script: {result.stderr}')
     classified_result  = result.stdout.strip()
     #classified_result  = stdout.read().strip()
     return classified_result 
@@ -155,7 +176,7 @@ while True:
 
         #download corresponding image from input S3 bucket
         downloaded_image_path = download_image_from_bucket(image_name)
-        logger.debug(f'Image Path: {downloaded_image_path}')
+        logger.info(f'Image Path: {downloaded_image_path}')
         #do classification using given model
         classified_result = classify_image(downloaded_image_path)
 
