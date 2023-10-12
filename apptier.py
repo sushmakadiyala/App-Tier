@@ -138,7 +138,7 @@ def get_running_instances():
 
 while True:
     count = get_running_instances()
-    if count > 2:
+    if count > 1:
         check_for_empty_queue()
     
     # receive a message from request queue        
