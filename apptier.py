@@ -172,4 +172,4 @@ while True:
         sqs.delete_message(QueueUrl=REQUEST_SQS, ReceiptHandle=receipt_handle)
 
     # Wait for 5 seconds before polling next message 
-    time.sleep(8)
+    time.sleep(4)
